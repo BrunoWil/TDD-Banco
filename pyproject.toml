@@ -1,5 +1,5 @@
 [project]
-name = "desafio-banco-3"
+name = "tdd-banco"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"

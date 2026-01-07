@@ -109,6 +109,9 @@ class ContaTDD(Conta):
     3. Validações de estado (Guard Assertions).
     """
     def __init__(self, numero, cliente, saldo=0, limite=500, limite_saque=3):
+        # Correção: Sanitização de saldo inicial negativo
+        if saldo < 0:
+            saldo = 0
         super().__init__(numero, cliente, saldo)
         self.limite = Decimal(str(limite))
         self.limite_saque = limite_saque
