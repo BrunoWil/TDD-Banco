@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulação Bancária: Tradicional vs TDD</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --primary: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #2c3e50;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        
+        .nav-bar { text-align: center; margin-bottom: 30px; }
+        .nav-link { text-decoration: none; padding: 12px 25px; border-radius: 4px; font-weight: bold; margin: 0 10px; transition: 0.3s; }
+        .nav-link.active { background-color: var(--primary); color: white; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); }
+        .nav-link.inactive { background-color: #bdc3c7; color: white; }
+        .nav-link.inactive:hover { background-color: #95a5a6; }
+
+        .controls { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .scenarios { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-scenario { background-color: var(--primary); color: white; }
+        .btn-scenario:hover { background-color: #2980b9; }
+        .btn-run { background-color: var(--success); color: white; width: 100%; font-size: 1.1em; margin-top: 10px; }
+        .btn-run:hover { background-color: #27ae60; }
+        
+        .results-container { display: flex; gap: 20px; flex-wrap: wrap; }
+        .result-card { flex: 1; background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); min-width: 300px; }
+        .result-header { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; }
+        .tradicional { border-top: 5px solid var(--danger); }
+        .tdd { border-top: 5px solid var(--success); }
+        
+        .metric { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px; background: #f8f9fa; border-radius: 4px; }
+        .metric label { font-weight: bold; color: #7f8c8d; }
+        .metric span { font-family: 'Consolas', monospace; }
+        
+        .log { margin-top: 15px; max-height: 300px; overflow-y: auto; font-size: 0.9em; }
+        .log-item { padding: 5px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; }
+        .log-item.fail { color: var(--danger); }
+        .log-item.success { color: var(--success); }
+
+        .highlight-error { background-color: #fadbd8; color: #c0392b; font-weight: bold; padding: 2px 5px; border-radius: 3px; }
+        .highlight-success { background-color: #d5f5e3; color: #1e8449; font-weight: bold; padding: 2px 5px; border-radius: 3px; }
+
+        input[type="number"] { padding: 8px; border: 1px solid #ddd; border-radius: 4px; width: 100px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-bar">
+        <a href="index.html" class="nav-link active">Simulação Unitária</a>
+        <a href="mass_tests.html" class="nav-link inactive">Relatório Massivo</a>
+    </div>
+
+    <h1>Simulador: Impacto do TDD em Sistemas Bancários</h1>
+
+    <div class="controls" style="border-left: 5px solid var(--primary);">
+        <h3 style="margin-top: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="toggleStructure()">
+            <span>📂 Entenda a Estrutura do Código (Passo a Passo)</span>
+            <span id="toggleIcon" style="font-size: 0.8em;">▼</span>
+        </h3>
+        <div id="structureContent" style="display: none; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+            <p>O sistema compara duas implementações de uma conta bancária para demonstrar a eficácia do TDD:</p>
+            
+            <!-- Fluxo Visual TDD -->
+            <div style="display: flex; justify-content: center; align-items: center; margin: 25px 0; gap: 15px; flex-wrap: wrap; background: #fff; padding: 15px; border-radius: 8px; border: 1px dashed #ccc;">
+                <div style="text-align: center; width: 110px;">
+                    <div style="width: 70px; height: 70px; background-color: #e74c3c; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid #c0392b;">RED</div>
+                    <div style="font-size: 0.85em; margin-top: 8px; font-weight: bold; color: #c0392b;">1. Escrever Teste<br>(Falha)</div>
+                </div>
+                <div style="font-size: 1.5em; color: #95a5a6;">➜</div>
+                <div style="text-align: center; width: 110px;">
+                    <div style="width: 70px; height: 70px; background-color: #2ecc71; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid #27ae60;">GREEN</div>
+                    <div style="font-size: 0.85em; margin-top: 8px; font-weight: bold; color: #27ae60;">2. Código Mínimo<br>(Passa)</div>
+                </div>
+                <div style="font-size: 1.5em; color: #95a5a6;">➜</div>
+                <div style="text-align: center; width: 110px;">
+                    <div style="width: 70px; height: 70px; background-color: #3498db; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8em; margin: 0 auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 3px solid #2980b9;">REFACTOR</div>
+                    <div style="font-size: 0.85em; margin-top: 8px; font-weight: bold; color: #2980b9;">3. Melhorar<br>(Limpeza)</div>
+                </div>
+            </div>
+
+            <!-- Exemplo de Código -->
+            <div style="margin: 20px 0; background: #2c3e50; color: #ecf0f1; padding: 15px; border-radius: 8px; font-family: 'Consolas', monospace; font-size: 0.9em;">
+                <div style="margin-bottom: 10px; border-bottom: 1px solid #34495e; padding-bottom: 5px; font-weight: bold; color: #f1c40f;">
+                    💻 Exemplo Real do Projeto: Correção de Precisão (Float vs Decimal)
+                </div>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="color: #e74c3c; margin-bottom: 5px; font-weight: bold;">1. RED (O Teste que Falha)</div>
+                        <div style="background: #1a252f; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre;">def test_precision():
+    acc = Account(1.10)
+    acc.withdraw(0.40)
+    
+    # Float: 0.7000000000000001
+    assert acc.balance == 0.70</div>
+                    </div>
+                    
+                    <div style="flex: 1; min-width: 250px;">
+                        <div style="color: #3498db; margin-bottom: 5px; font-weight: bold;">3. REFACTOR (Solução TDD)</div>
+                        <div style="background: #1a252f; padding: 10px; border-radius: 4px; overflow-x: auto; white-space: pre;">from decimal import Decimal
+
+class Account:
+    def __init__(self, val):
+        # Decimal garante exatidão
+        self.balance = Decimal(str(val))</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 300px;">
+                    <h4 style="color: var(--danger); margin-bottom: 5px;">🔴 1. Implementação Tradicional</h4>
+                    <p style="margin-top: 0; font-size: 0.9em; color: #666;"><em>Arquivo: <code>traditional/main.py</code></em></p>
+                    <ul style="font-size: 0.9em;">
+                        <li><strong>Tipo de Dado:</strong> Usa <code>float</code>. Gera erros de arredondamento (ex: 0.1 + 0.2 ≠ 0.3).</li>
+                        <li><strong>Lógica:</strong> Validações frágeis. Permite falhas como saldo negativo ou estouro de limite de saques.</li>
+                    </ul>
+                </div>
+                
+                <div style="flex: 1; min-width: 300px;">
+                    <h4 style="color: var(--success); margin-bottom: 5px;">🟢 2. Implementação TDD</h4>
+                    <p style="margin-top: 0; font-size: 0.9em; color: #666;"><em>Arquivo: <code>tdd/main_tdd.py</code></em></p>
+                    <ul style="font-size: 0.9em;">
+                        <li><strong>Tipo de Dado:</strong> Usa <code>Decimal</code>. Garante precisão monetária absoluta.</li>
+                        <li><strong>Segurança:</strong> Protegida por 32 testes unitários (<code>tdd/test_tdd_exaustivo.py</code>).</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 0.9em; border: 1px solid #eee;">
+                <strong>⚙️ Fluxo da Simulação:</strong> O Frontend envia os dados para a API (<code>api.py</code>), que executa o cenário em ambas as classes via <code>services.py</code> e retorna a comparação.
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <h3>Configuração da Simulação</h3>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="testSelect"><strong>Selecione um Caso de Teste (TDD Exaustivo):</strong></label>
+            <select id="testSelect" onchange="loadTestScenario()" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc;">
+                <option value="">-- Escolha um teste --</option>
+            </select>
+        </div>
+        
+        <!-- Painel de Contexto TDD Adicionado -->
+        <div id="testDescription" style="background: #e8f6f3; padding: 15px; border-left: 5px solid #1abc9c; margin-bottom: 15px; display: none; border-radius: 4px;">
+            <h4 style="margin-top: 0; color: #16a085; margin-bottom: 5px;">Contexto TDD (Ciclo Red-Green-Refactor)</h4>
+            <p id="testDescText" style="margin: 0; line-height: 1.4; font-size: 0.95em; color: #34495e;"></p>
+        </div>
+        
+        <div style="margin-top: 15px; display: flex; gap: 20px; flex-wrap: wrap;">
+            <div><label>Saldo Inicial: </label>
+            <input type="number" id="initialBalance" value="0.00" step="0.01"></div>
+            <div><label>Limite Valor: </label>
+            <input type="number" id="limitValue" value="500.00"></div>
+            <div><label>Limite Saques: </label>
+            <input type="number" id="limitQty" value="3"></div>
+        </div>
+        
+        <div id="operationsList" style="margin-top: 15px;">
+            <!-- Lista de operações dinâmica -->
+        </div>
+
+        <button class="btn-run" onclick="runSimulation()">Executar Simulação Comparativa</button>
+    </div>
+
+    <div class="results-container">
+        <!-- Resultado Tradicional -->
+        <div class="result-card tradicional">
+            <div class="result-header" style="color: var(--danger)">Método Tradicional (Sem TDD)</div>
+            <div class="metric">
+                <label>Saldo Final:</label>
+                <span id="tradBalance">---</span>
+            </div>
+            <div class="metric">
+                <label>Tipo de Dado:</label>
+                <span id="tradType">---</span>
+            </div>
+            <div class="log" id="tradLog"></div>
+        </div>
+
+        <!-- Resultado TDD -->
+        <div class="result-card tdd">
+            <div class="result-header" style="color: var(--success)">Método TDD (Refatorado)</div>
+            <div class="metric">
+                <label>Saldo Final:</label>
+                <span id="tddBalance">---</span>
+            </div>
+            <div class="metric">
+                <label>Tipo de Dado:</label>
+                <span id="tddType">---</span>
+            </div>
+            <div class="log" id="tddLog"></div>
+        </div>
+    </div>
+
+    <div class="controls" style="margin-top: 20px;">
+        <h3>Visualização Gráfica da Discrepância</h3>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="balanceChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    let operations = [];
+    let chartInstance = null;
+
+    // Mapeamento dos 32 testes do arquivo test_tdd_exaustivo.py
+    const testCases = [
+        // Grupo 1: Inicialização
+        { id: 't01', name: '01. Inicialização: Saldo Zero', bal: 0, lim: 500, limQ: 3, ops: [], desc: "Setup/Fixture: Garante que o objeto Account é instanciado corretamente com o estado inicial esperado (Zero) antes de qualquer operação." },
+        { id: 't02', name: '02. Inicialização: Saldo Float (100.50)', bal: 100.50, lim: 500, limQ: 3, ops: [], desc: "Setup/Fixture: Verifica se o construtor aceita e converte corretamente tipos primitivos (float) para a representação interna segura." },
+        { id: 't03', name: '03. Inicialização: Limites Padrão', bal: 0, lim: 500, limQ: 3, ops: [], desc: "Setup: Validação de valores default definidos nas regras de negócio." },
+        { id: 't04', name: '04. Inicialização: Limites Custom (1000/5)', bal: 0, lim: 1000, limQ: 5, ops: [], desc: "Setup: Garante flexibilidade da classe para diferentes perfis de conta (injeção de dependência via construtor)." },
+        { id: 't05', name: '05. Atributos Cliente (Visual)', bal: 0, lim: 500, limQ: 3, ops: [], desc: "Verificação de integridade de dados não-monetários." },
+        
+        // Grupo 2: Depósitos
+        { id: 't06', name: '06. Depósito: Valor Positivo (100)', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 100}], desc: "State Verification: Verifica se o método deposit() altera o estado do saldo corretamente. No TDD, começamos com a implementação mais simples (Green)." },
+        { id: 't07', name: '07. Depósito: String/Float (50.50)', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 50.50}], desc: "Robustez de Tipos: Garante que o sistema aceita diferentes formatos numéricos sem quebrar." },
+        { id: 't08', name: '08. Depósito: Valor Zero', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 0}], desc: "Guard Assertion: Regra de negócio que impede movimentações nulas." },
+        { id: 't09', name: '09. Depósito: Valor Negativo', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: -50}], desc: "Guard Assertion: Validação crítica para impedir injeção de valores negativos (que virariam saques disfarçados)." },
+        { id: 't10', name: '10. Depósito: Múltiplos (10, 20, 30)', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 10}, {tipo: 'deposito', valor: 20}, {tipo: 'deposito', valor: 30}], desc: "Acumulação de Estado: Verifica se múltiplas operações sequenciais mantêm a consistência do saldo." },
+        { id: 't11', name: '11. Depósito: Centavos (0.01)', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 0.01}], desc: "Precisão Básica: Verifica se o sistema consegue lidar com a menor unidade monetária possível." },
+        
+        // Grupo 3: Saques Básicos
+        { id: 't12', name: '12. Saque: Saldo Suficiente (100)', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 100}], desc: "Ciclo 1 (Lógica Básica): O teste define o 'Caminho Feliz' do saque. A implementação inicial (Green) apenas subtrai o valor." },
+        { id: 't13', name: '13. Saque: Total (Zerar Conta)', bal: 1000, lim: 2000, limQ: 3, ops: [{tipo: 'saque', valor: 1000}], desc: "Teste de Limite: Verifica o comportamento exato quando Saldo == Saque." },
+        { id: 't14', name: '14. Saque: Insuficiente (Guard Assertion)', bal: 1000, lim: 2000, limQ: 3, ops: [{tipo: 'saque', valor: 1001}], desc: "Ciclo 2 (Guard Assertion): Este teste força a falha (Red) quando o saldo é insuficiente. A correção (Green) exige adicionar um 'if' para lançar exceção." },
+        { id: 't15', name: '15. Saque: Valor Zero', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 0}], desc: "Validação de Entrada: Impede operações nulas desnecessárias." },
+        { id: 't16', name: '16. Saque: Valor Negativo', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: -100}], desc: "Segurança: Impede que um saque negativo se torne um depósito indevido." },
+        { id: 't17', name: '17. Saque: Acima Limite Transação (600)', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 600}], desc: "Regra de Negócio: Validação de limite por operação, independente do saldo disponível." },
+        
+        // Grupo 4: Precisão Numérica
+        { id: 't18', name: '18. Precisão: Soma (0.1+0.1+0.1)', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 0.1}, {tipo: 'deposito', valor: 0.1}, {tipo: 'deposito', valor: 0.1}], desc: "Ciclo 3 (Precisão - Refactor): Expõe o erro clássico de ponto flutuante (0.30000000000000004). Exige refatoração para Decimal." },
+        { id: 't19', name: '19. Precisão: Subtração (1.10 - 0.40)', bal: 1.10, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 0.40}], desc: "Ciclo 3 (Precisão - Refactor): Verifica erro de subtração em float. Essencial para garantir integridade de saldo." },
+        { id: 't20', name: '20. Precisão: Multiplicação (100x 0.01)', bal: 0, lim: 500, limQ: 3, ops: Array(100).fill({tipo: 'deposito', valor: 0.01}), desc: "Teste de Carga/Acumulação: Verifica se pequenos erros de precisão se acumulam ao longo de muitas transações." },
+        { id: 't21', name: '21. Arredondamento Entrada (10.555)', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 10.555}], desc: "Política de Arredondamento: Define como o sistema lida com frações de centavos (ROUND_HALF_UP)." },
+        { id: 't22', name: '22. Arredondamento Saque (10.555)', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 10.555}], desc: "Consistência: Garante que a política de arredondamento é aplicada tanto em entradas quanto em saídas." },
+        
+        // Grupo 5: Regras de Negócio
+        { id: 't23', name: '23. Limite Saques: Contagem Inicial', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 10}], desc: "Controle de Estado: Verifica se o contador de saques é incrementado corretamente." },
+        { id: 't24', name: '24. Limite Saques: Bloqueio 4º Saque', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}], desc: "Regra de Negócio (Stateful): Verifica se o sistema bloqueia operações após atingir o limite diário." },
+        { id: 't25', name: '25. Limite Saques: Depósito Permitido', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}, {tipo: 'deposito', valor: 100}], desc: "Isolamento de Regras: Garante que o bloqueio de saques não afeta outras operações (depósitos)." },
+        { id: 't26', name: '26. Limite Saques: Customizado (5)', bal: 1000, lim: 500, limQ: 5, ops: [{tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}, {tipo: 'saque', valor: 10}], desc: "Configuração Dinâmica: Verifica se o limite de saques respeita a configuração da instância." },
+        { id: 't27', name: '27. Lógica: Falha não incrementa', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 2000}, {tipo: 'saque', valor: 10}], desc: "Atomicidade/Rollback: Uma operação falha (ex: saldo insuficiente) NÃO deve incrementar o contador de saques realizados." },
+        
+        // Grupo 6: Bordas e Carga
+        { id: 't28', name: '28. Tipos: Decimal Preservado', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 10.5}, {tipo: 'saque', valor: 5}], desc: "Integridade de Tipos: Garante que operações mistas não degradam o tipo Decimal para float." },
+        { id: 't29', name: '29. Borda: Depósito Bilhão', bal: 0, lim: 500, limQ: 3, ops: [{tipo: 'deposito', valor: 1000000000}], desc: "Teste de Borda (Overflow): Verifica comportamento com valores muito grandes." },
+        { id: 't30', name: '30. Borda: Saque Milhão', bal: 0, lim: 2000000, limQ: 3, ops: [{tipo: 'deposito', valor: 2000000}, {tipo: 'saque', valor: 1000000}], desc: "Teste de Carga: Operações de alto valor." },
+        { id: 't31', name: '31. Borda: Limite Exato (500)', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 500}], desc: "Teste de Limite (Boundary): Verifica se a condição é > ou >=." },
+        { id: 't32', name: '32. Borda: Acima Limite (500.01)', bal: 1000, lim: 500, limQ: 3, ops: [{tipo: 'saque', valor: 500.01}], desc: "Teste de Limite (Boundary): Verifica se 1 centavo acima do limite é bloqueado." }
+    ];
+
+    // Popular o Select
+    const select = document.getElementById('testSelect');
+    testCases.forEach(test => {
+        const option = document.createElement('option');
+        option.value = test.id;
+        option.textContent = test.name;
+        select.appendChild(option);
+    });
+
+    function loadTestScenario() {
+        const selectedId = document.getElementById('testSelect').value;
+        const test = testCases.find(t => t.id === selectedId);
+        
+        if (!test) return;
+
+        document.getElementById('initialBalance').value = test.bal;
+        document.getElementById('limitValue').value = test.lim;
+        document.getElementById('limitQty').value = test.limQ;
+        operations = test.ops;
+        
+        // Atualizar descrição TDD
+        const descBox = document.getElementById('testDescription');
+        const descText = document.getElementById('testDescText');
+        if (test.desc) {
+            descBox.style.display = 'block';
+            descText.textContent = test.desc;
+        } else {
+            descBox.style.display = 'none';
+        }
+        
+        renderOperations();
+    }
+
+    function renderOperations() {
+        const container = document.getElementById('operationsList');
+        container.innerHTML = '<strong>Operações:</strong><br>' + operations.map((op, index) => 
+            `• ${op.tipo.toUpperCase()} de R$ ${op.valor}`
+        ).join('<br>');
+    }
+
+    async function runSimulation() {
+        const saldoInicial = parseFloat(document.getElementById('initialBalance').value);
+        const limite = parseFloat(document.getElementById('limitValue').value);
+        const limiteSaque = parseInt(document.getElementById('limitQty').value);
+
+        const payload = {
+            saldo_inicial: saldoInicial,
+            limite: limite,
+            limite_saque: limiteSaque,
+            operacoes: operations
+        };
+
+        // Limpar resultados
+        document.getElementById('tradBalance').innerHTML = 'Carregando...';
+        document.getElementById('tddBalance').innerHTML = 'Carregando...';
+
+        try {
+            // Executar Tradicional
+            const resTrad = await fetch('http://127.0.0.1:8000/simulacao/tradicional', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const dataTrad = await resTrad.json();
+            updateUI('trad', dataTrad);
+
+            // Executar TDD
+            const resTdd = await fetch('http://127.0.0.1:8000/simulacao/tdd', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const dataTdd = await resTdd.json();
+            updateUI('tdd', dataTdd);
+
+            updateChart(dataTrad.saldo_final, dataTdd.saldo_final);
+
+        } catch (error) {
+            alert("Erro ao conectar com a API. Verifique se o servidor está rodando (uvicorn api:app --reload).");
+            console.error(error);
+        }
+    }
+
+    function updateUI(prefix, data) {
+        const balanceEl = document.getElementById(`${prefix}Balance`);
+        const typeEl = document.getElementById(`${prefix}Type`);
+        const logEl = document.getElementById(`${prefix}Log`);
+
+        // Formatação do Saldo
+        let balanceDisplay = data.saldo_final;
+        
+        // Destacar erro de precisão no Tradicional
+        if (prefix === 'trad' && data.saldo_final.toString().length > 10) {
+            balanceDisplay = `<span class="highlight-error">${data.saldo_final}</span>`;
+        } else if (prefix === 'tdd') {
+            balanceDisplay = `<span class="highlight-success">${data.saldo_final.toFixed(2)}</span>`;
+        }
+
+        balanceEl.innerHTML = `R$ ${balanceDisplay}`;
+        typeEl.innerText = data.tipo_dado.replace("<class '", "").replace("'>", "");
+
+        // Histórico
+        logEl.innerHTML = data.historico.map((item, i) => {
+            const statusIcon = item.sucesso ? '✅' : '❌';
+            const statusClass = item.sucesso ? 'success' : 'fail';
+            
+            // Lógica para destacar o erro de limite
+            let extraInfo = '';
+            if (prefix === 'trad' && i === 3 && item.sucesso && item.op === 'saque') {
+                extraInfo = '<br><small class="highlight-error">ERRO: Permitiu 4º saque!</small>';
+            }
+            if (prefix === 'tdd' && i === 3 && !item.sucesso && item.op === 'saque') {
+                extraInfo = '<br><small class="highlight-success">CORRETO: Bloqueou 4º saque</small>';
+            }
+            if (prefix === 'tdd' && item.saldo === 0 && !item.sucesso) {
+                 extraInfo = '<br><small class="highlight-success">CORRETO: Bloqueou saldo negativo</small>';
+            }
+            if (prefix === 'tdd' && item.op === 'saque' && !item.sucesso && item.valor > 500 && item.valor <= 2000) {
+                 extraInfo = '<br><small class="highlight-success">CORRETO: Bloqueou limite valor</small>';
+            }
+
+            return `
+                <div class="log-item ${statusClass}">
+                    <span>${i+1}. ${item.op} R$${item.valor}</span>
+                    <span style="text-align:right">${statusIcon} Saldo: ${item.saldo}${extraInfo}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function updateChart(tradBalance, tddBalance) {
+        const ctx = document.getElementById('balanceChart').getContext('2d');
+        
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Tradicional (Float)', 'TDD (Decimal)'],
+                datasets: [{
+                    label: 'Saldo Final (R$)',
+                    data: [tradBalance, tddBalance],
+                    backgroundColor: [
+                        'rgba(231, 76, 60, 0.7)', // Vermelho para Tradicional
+                        'rgba(46, 204, 113, 0.7)'  // Verde para TDD
+                    ],
+                    borderColor: [
+                        'rgba(231, 76, 60, 1)',
+                        'rgba(46, 204, 113, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: false } // Começa próximo aos valores para destacar diferenças pequenas
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw; // Mostra o valor exato (com casas decimais extras se houver)
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Inicializar vazio
+    // setScenario('precision');
+
+    function toggleStructure() {
+        const content = document.getElementById('structureContent');
+        const icon = document.getElementById('toggleIcon');
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            icon.textContent = '▲';
+        } else {
+            content.style.display = 'none';
+            icon.textContent = '▼';
+        }
+    }
+</script>
+
+</body>

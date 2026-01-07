@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório Massivo - TDD Bancário</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --card-bg: #ffffff;
+            --primary: #3498db;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --text: #2c3e50;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        
+        .nav-bar { text-align: center; margin-bottom: 30px; }
+        .nav-link { text-decoration: none; padding: 12px 25px; border-radius: 4px; font-weight: bold; margin: 0 10px; transition: 0.3s; }
+        .nav-link.active { background-color: var(--primary); color: white; box-shadow: 0 4px 6px rgba(52, 152, 219, 0.3); }
+        .nav-link.inactive { background-color: #bdc3c7; color: white; }
+        .nav-link.inactive:hover { background-color: #95a5a6; }
+
+        .controls { background: var(--card-bg); padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        button { padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-run-all { background-color: #8e44ad; color: white; width: 100%; font-size: 1.1em; }
+        .btn-run-all:hover { background-color: #732d91; }
+
+        .error-card { border: 1px solid #e74c3c; border-radius: 8px; padding: 15px; background: #fff; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .error-card h4 { color: #c0392b; margin-top: 0; border-bottom: 1px solid #fadbd8; padding-bottom: 10px; margin-bottom: 15px; }
+        .card-cols { display: flex; gap: 15px; flex-wrap: wrap; }
+        .col-trad { flex: 1; padding: 15px; background: #fdedec; border-radius: 6px; min-width: 250px; }
+        .col-tdd { flex: 1; padding: 15px; background: #e8f8f5; border-radius: 6px; min-width: 250px; }
+        .metric { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .metric label { font-weight: bold; color: #7f8c8d; }
+        .metric span { font-family: 'Consolas', monospace; }
+        
+        .vis-bar-container { margin-top: 15px; background: #f8f9fa; padding: 10px; border-radius: 4px; }
+        .vis-bar-row { display: flex; align-items: center; margin-bottom: 5px; font-size: 0.85em; }
+        .vis-label { width: 100px; font-weight: bold; }
+        .vis-track { flex: 1; background: #e0e0e0; height: 10px; border-radius: 5px; overflow: hidden; }
+        .vis-fill { height: 100%; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-bar">
+        <a href="index.html" class="nav-link inactive">Simulação Unitária</a>
+        <a href="mass_tests.html" class="nav-link active">Relatório Massivo</a>
+    </div>
+
+    <h1>Relatório de Confiabilidade: TDD vs Tradicional</h1>
+
+    <div class="controls">
+        <button class="btn-run-all" onclick="runAllTests()">Executar Bateria de Testes Completa (32 Casos)</button>
+    </div>
+
+    <div id="reportSection" style="display:none;">
+        <div id="reportSummary" style="margin-bottom: 15px; font-size: 1.1em; background: #fff; padding: 15px; border-radius: 8px;"></div>
+        <div id="reportCardsContainer"></div>
+    </div>
+</div>
+
+<script>
+    async function runAllTests() {
+        const reportSection = document.getElementById('reportSection');
+        const container = document.getElementById('reportCardsContainer');
+        const summary = document.getElementById('reportSummary');
+        
+        reportSection.style.display = 'block';
+        container.innerHTML = '<div style="text-align:center; padding: 20px;">Executando bateria de testes... Por favor aguarde.</div>';
+        summary.innerHTML = 'Processando...';
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/simulacao/relatorio');
+            const data = await response.json();
+            
+            let cardsHtml = '';
+            let errorCount = 0;
+            const cleanType = (t) => t ? t.replace("<class '", "").replace("'>", "") : 'N/A';
+            
+            data.detalhes.forEach(item => {
+                if (item.status.includes("ERRO")) {
+                    errorCount++;
+                    
+                    // Calcular larguras para visualização gráfica
+                    const valTrad = parseFloat(item.saldo_trad);
+                    const valTdd = parseFloat(item.saldo_tdd);
+                    const maxVal = Math.max(Math.abs(valTrad), Math.abs(valTdd)) || 1;
+                    const pctTrad = (Math.abs(valTrad) / maxVal) * 100;
+                    const pctTdd = (Math.abs(valTdd) / maxVal) * 100;
+                    
+                    cardsHtml += `
+                    <div class="error-card">
+                        <h4>❌ ${item.name} <span style="font-size:0.8em; color:#7f8c8d; font-weight:normal;">(${item.status})</span></h4>
+                        
+                        <div class="card-cols">
+                            <div class="col-trad">
+                                <strong style="color: #c0392b; display:block; margin-bottom:10px;">Método Tradicional (Sem TDD)</strong>
+                                <div class="metric"><label>Saldo Final:</label> <span>${item.saldo_trad}</span></div>
+                                <div class="metric"><label>Tipo de Dado:</label> <span>${cleanType(item.tipo_trad)}</span></div>
+                            </div>
+                            
+                            <div class="col-tdd">
+                                <strong style="color: #27ae60; display:block; margin-bottom:10px;">Método TDD (Refatorado)</strong>
+                                <div class="metric"><label>Saldo Final:</label> <span>${item.saldo_tdd}</span></div>
+                                <div class="metric"><label>Tipo de Dado:</label> <span>${cleanType(item.tipo_tdd)}</span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="vis-bar-container">
+                            <strong>Visualização Gráfica da Discrepância:</strong>
+                            <div style="margin-top:10px;">
+                                <div class="vis-bar-row">
+                                    <span class="vis-label" style="color:#c0392b;">Tradicional</span>
+                                    <div class="vis-track"><div class="vis-fill" style="width: ${pctTrad}%; background-color: #e74c3c;"></div></div>
+                                    <span style="margin-left:10px; font-family:monospace;">${item.saldo_trad}</span>
+                                </div>
+                                <div class="vis-bar-row">
+                                    <span class="vis-label" style="color:#27ae60;">TDD</span>
+                                    <div class="vis-track"><div class="vis-fill" style="width: ${pctTdd}%; background-color: #2ecc71;"></div></div>
+                                    <span style="margin-left:10px; font-family:monospace;">${item.saldo_tdd}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+            });
+
+            if (errorCount === 0) {
+                cardsHtml = '<div style="padding:20px; background:#d5f5e3; color:#1e8449; border-radius:8px; text-align:center;"><strong>✅ Sucesso Absoluto!</strong> Nenhum erro encontrado em nenhum dos cenários. O TDD garantiu a integridade total.</div>';
+            }
+
+            container.innerHTML = cardsHtml;
+            summary.innerHTML = `
+                <strong>Total de Testes:</strong> ${data.total} <br>
+                <strong>Erros Detectados (Divergências Tradicional vs TDD):</strong> <span style="color:${data.erros > 0 ? '#c0392b' : 'green'}; font-weight: bold; font-size: 1.2em;">${data.erros}</span>
+            `;
+
+        } catch (e) {
+            console.error(e);
+            container.innerHTML = '<div style="text-align:center; color: red; padding: 20px;">Erro ao conectar com o servidor.</div>';
+            summary.innerHTML = 'Erro.';
+        }
+    }
+    
+    // Auto-run opcional
+    // runAllTests();
+</script>
+</body>
+</html>
