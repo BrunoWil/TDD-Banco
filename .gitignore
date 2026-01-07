@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+env/
+.env
+
+# LaTeX (Arquivos auxiliares gerados na compilação do TCC)
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.pdf
+*.synctex.gz
+*.toc
+*.bbl
+*.blg
+*.tex
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
