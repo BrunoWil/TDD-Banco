@@ -3,10 +3,12 @@ runtime: python311
 build:
   commands:
     build:
-      # 1. Instala o uv via HTTPS
+      # 1. Instala o uv
       - curl -LsSf https://astral.sh/uv/install.sh | sh
-      # 2. Usa o caminho direto onde o uv foi instalado (/root/.local/bin/uv)
-      - /root/.local/bin/uv pip install --system .
+      # 2. Gera um requirements.txt a partir do seu pyproject.toml automaticamente
+      - /root/.local/bin/uv export --format requirements-txt > requirements_deploy.txt
+      # 3. Instala apenas as bibliotecas necessárias (FastAPI, Uvicorn, etc.)
+      - pip install -r requirements_deploy.txt
 run:
   command: uvicorn api:app --host 0.0.0.0 --port 8000
   network:
