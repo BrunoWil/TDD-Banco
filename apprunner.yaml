@@ -6,7 +6,7 @@ build:
       # 1. Instala o uv
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       # 2. Gera um requirements.txt a partir do seu pyproject.toml automaticamente
-      - /root/.local/bin/uv export --format requirements-txt > requirements_deploy.txt
+      - $HOME/.local/bin/uv pip compile pyproject.toml -o requirements_deploy.txt
       # 3. Instala apenas as bibliotecas necessárias (FastAPI, Uvicorn, etc.)
       - pip install -r requirements_deploy.txt
 run:
