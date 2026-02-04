@@ -1,24 +1,22 @@
-# Simula o runtime: python311
 FROM python:3.11-slim
 
-# Instala dependências de sistema necessárias (curl é usado no script de instalação do uv)
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# Evita buffering de logs
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Copia os arquivos do projeto para o container
+# Instala uv
+RUN pip install --no-cache-dir uv
+
+# Copia apenas arquivos de dependência primeiro (cache)
+COPY pyproject.toml uv.lock* ./
+
+# Instala dependências
+RUN uv pip install --system -r pyproject.toml
+
+# Copia o resto da aplicação
 COPY . .
 
-# --- Executa os comandos da seção 'build' do apprunner.yaml ---
+EXPOSE 8000
 
-# 1. Instala o uv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# 2. Gera o requirements.txt (No container rodando como root, $HOME é /root)
-RUN /root/.local/bin/uv pip compile pyproject.toml -o requirements_deploy.txt
-
-# 3. Instala as bibliotecas
-RUN pip install -r requirements_deploy.txt
-
-# --- Executa o comando da seção 'run' do apprunner.yaml ---
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["python", "-m", "uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
