@@ -1,0 +1,13 @@
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      # 1. Instala o uv no ambiente da AWS
+      - pip install uv
+      # 2. Usa o uv para instalar as dependências do pyproject.toml no sistema do container
+      - uv pip install --system -r pyproject.toml
+run:
+  command: uvicorn api:app --host 0.0.0.0 --port 8080
+  network:
+    port: 8080
