@@ -3,6 +3,4 @@ build:
     build:
       - curl -LsSf https://astral.sh/uv/install.sh | sh
       # Gera o arquivo temporário na hora do build
-      - /root/.local/bin/uv export --format requirements-txt > requirements_deploy.txt
-      # Instala as bibliotecas a partir desse arquivo gerado
-      - pip install -r requirements_deploy.txt
+      - /root/.local/bin/uv sync
