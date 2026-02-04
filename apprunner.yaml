@@ -4,13 +4,12 @@ runtime: python311
 build:
   commands:
     build:
-      # Instalação da ferramenta de gestão de pacotes
+      # Instala o uv
       - curl -LsSf https://astral.sh/uv/install.sh | sh
-      # Instalação das dependências lendo o seu pyproject.toml
-      - /root/.local/bin/uv pip install --system --requirement pyproject.toml
+      # Instala dependências a partir do pyproject.toml
+      - /root/.local/bin/uv pip install --system .
 
 run:
-  # Comando para subir a API do seu TCC
-  command: python311 -m uvicorn api:app --host 0.0.0.0 --port 8000
+  command: python3 -m uvicorn api:app --host 0.0.0.0 --port 8000
   network:
     port: 8000
