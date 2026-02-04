@@ -1,6 +1,16 @@
+version: 1.0
+runtime: python311
+
 build:
   commands:
     build:
+      # Instalação da ferramenta de gestão de pacotes
       - curl -LsSf https://astral.sh/uv/install.sh | sh
-      # Gera o arquivo temporário na hora do build
-      - /root/.local/bin/uv sync
+      # Instalação das dependências lendo o seu pyproject.toml
+      - /root/.local/bin/uv pip install --system --requirement pyproject.toml
+
+run:
+  # Comando para subir a API do seu TCC
+  command: uvicorn api:app --host 0.0.0.0 --port 8000
+  network:
+    port: 8000
