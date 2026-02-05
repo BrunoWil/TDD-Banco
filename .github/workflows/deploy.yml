@@ -21,15 +21,37 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-        
+
       - name: Build, tag, and push image to ECR
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          # Mude de TDD-Banco para tdd-banco (tudo minúsculo)
           ECR_REPOSITORY: tdd-banco 
           IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # PASSO NOVO 1: Baixar a Task Definition atual para editá-la
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition tdd-banco-task --query taskDefinition > task-definition.json
+
+      # PASSO NOVO 2: Atualizar o arquivo com a nova imagem do ECR
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: tdd-banco-container # Nome que você colocar na Task Definition
+          image: ${{ steps.build-image.outputs.image }}
+
+      # PASSO NOVO 3: Enviar a nova Task Definition para o ECS e atualizar o Serviço
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: tdd-banco-service # Nome do seu serviço criado no cluster
+          cluster: cluster-tdd-banco # Nome do cluster que você está criando
+          wait-for-service-stability: true
