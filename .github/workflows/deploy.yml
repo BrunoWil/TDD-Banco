@@ -36,8 +36,9 @@ jobs:
       # PASSO NOVO 1: Baixar a Task Definition atual para editá-la
       - name: Download task definition
         run: |
-          aws ecs describe-task-definition --task-definition tdd-banco-task --query taskDefinition > task-definition.json
-
+          aws ecs describe-task-definition --task-definition tdd-banco-task --query taskDefinition > raw-task-definition.json
+          # Esse comando limpa os campos que causam erro no deploy
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy, .enableFaultInjection)' raw-task-definition.json > task-definition.json
       # PASSO NOVO 2: Atualizar o arquivo com a nova imagem do ECR
       - name: Fill in the new image ID in the Amazon ECS task definition
         id: task-def
