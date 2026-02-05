@@ -55,7 +55,7 @@ Para iniciar o servidor da aplicação e acessar as simulações:
 uv run uvicorn api:app --reload
 ```
 
-O servidor estará disponível em `http://127.0.0.1:8000`.
+O servidor estará disponível em `/`.
 
 ### Rodar os Testes
 

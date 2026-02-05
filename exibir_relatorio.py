@@ -3,7 +3,7 @@ import requests
 # Script auxiliar para visualizar o relatório da API em formato de tabela no terminal
 
 def main():
-    url = "http://127.0.0.1:8000/simulacao/relatorio"
+    url = "//simulacao/relatorio"
     print(f"Consultando API: {url} ...")
     
     try:
