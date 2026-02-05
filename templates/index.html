@@ -324,7 +324,7 @@ class Account:
 
         try {
             // Executar Tradicional
-            const resTrad = await fetch('//simulacao/tradicional', {
+            const resTrad = await fetch(/simulacao/tradicional', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -333,7 +333,7 @@ class Account:
             updateUI('trad', dataTrad);
 
             // Executar TDD
-            const resTdd = await fetch('//simulacao/tdd', {
+            const resTdd = await fetch(/simulacao/tdd', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

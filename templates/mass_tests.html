@@ -75,7 +75,7 @@
         summary.innerHTML = 'Processando...';
 
         try {
-            const response = await fetch('//simulacao/relatorio');
+            const response = await fetch(/simulacao/relatorio');
             const data = await response.json();
             
             let cardsHtml = '';
