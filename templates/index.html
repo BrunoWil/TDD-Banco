@@ -218,6 +218,7 @@ class Account:
 <script>
     let operations = [];
     let chartInstance = null;
+    const API_BASE_URL = 'http://127.0.0.1:8000'; // Altere para o IP de produção ou deixe vazio '' se estiver no mesmo domínio
 
     // Mapeamento dos 32 testes do arquivo test_tdd_exaustivo.py
     const testCases = [
@@ -324,7 +325,7 @@ class Account:
 
         try {
             // Executar Tradicional
-            const resTrad = await fetch(/simulacao/tradicional', {
+            const resTrad = await fetch(`${API_BASE_URL}/simulacao/tradicional`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
@@ -333,7 +334,7 @@ class Account:
             updateUI('trad', dataTrad);
 
             // Executar TDD
-            const resTdd = await fetch(/simulacao/tdd', {
+            const resTdd = await fetch(`${API_BASE_URL}/simulacao/tdd`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)

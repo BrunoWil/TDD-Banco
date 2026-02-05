@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
@@ -37,24 +37,32 @@ def gerar_relatorio():
     return services.generate_report()
 
 @app.get("/", response_class=HTMLResponse)
-def read_root():
+def read_root(request: Request):
     """Serve o arquivo index.html se existir."""
     try:
         with open("templates/index.html", "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+            # Injeta o IP/URL atual dinamicamente no JavaScript
+            base_url = str(request.base_url).rstrip("/")
+            content = content.replace("const API_BASE_URL = 'http://127.0.0.1:8000';", f"const API_BASE_URL = '{base_url}';")
+            return content
     except FileNotFoundError:
         return "<h1>Arquivo index.html não encontrado.</h1>"
 
 @app.get("/index.html", response_class=HTMLResponse)
-def read_index():
+def read_index(request: Request):
     """Serve o arquivo index.html explicitamente para corrigir navegação."""
-    return read_root()
+    return read_root(request)
 
 @app.get("/mass_tests.html", response_class=HTMLResponse)
-def read_mass_tests():
+def read_mass_tests(request: Request):
     """Serve o arquivo mass_tests.html se existir."""
     try:
         with open("templates/mass_tests.html", "r", encoding="utf-8") as f:
-            return f.read()
+            content = f.read()
+            # Injeta o IP/URL atual dinamicamente no JavaScript
+            base_url = str(request.base_url).rstrip("/")
+            content = content.replace("const API_BASE_URL = 'http://127.0.0.1:8000';", f"const API_BASE_URL = '{base_url}';")
+            return content
     except FileNotFoundError:
         return "<h1>Arquivo mass_tests.html não encontrado.</h1>"
