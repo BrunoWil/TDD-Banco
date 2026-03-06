@@ -3,9 +3,7 @@ from decimal import Decimal
 from tdd.main_tdd import PessoaFisica, ContaTDD
 
 # ==============================================================================
-# Suíte de Testes TDD (Consolidada)
-# Baseada nos conceitos do documento TDD.tex.
-# Substitui e expande os testes demonstrativos de test_tdd.py.
+# Testes TDD
 # ==============================================================================
 
 # ==========================================

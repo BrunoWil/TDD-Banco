@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import List, Literal
 from decimal import Decimal, ROUND_HALF_UP
 
-# --- Implementação TDD (Corrigida) ---
+
 
 class HistoricoTDD:
     def __init__(self):
@@ -103,13 +103,12 @@ class Conta:
 class ContaTDD(Conta):
     """
     Versão da conta refatorada com TDD.
-    Corrige:
     1. Precisão numérica (usa Decimal).
     2. Lógica de limite de saques (verifica dicionário corretamente).
     3. Validações de estado (Guard Assertions).
     """
     def __init__(self, numero, cliente, saldo=0, limite=500, limite_saque=3):
-        # Correção: Sanitização de saldo inicial negativo
+        # Sanitização de saldo inicial negativo
         if saldo < 0:
             saldo = 0
         super().__init__(numero, cliente, saldo)
@@ -135,7 +134,7 @@ class ContaTDD(Conta):
         if valor > self._saldo:
             return False # Saldo insuficiente
             
-        # CORREÇÃO PRECISÃO: Operação com Decimal
+        # Operação com Decimal
         self._saldo -= valor
         self._saldo = self._saldo.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
         return True
